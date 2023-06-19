@@ -10,7 +10,8 @@
         "laravel/framework": "^10.10",
         "laravel/sanctum": "^3.2",
         "laravel/tinker": "^2.8",
-        "php-webdriver/webdriver": "^1.14"
+        "php-webdriver/webdriver": "^1.14",
+        "smalot/pdfparser": "^2.5"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9.1",

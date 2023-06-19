@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\EtiquetaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,3 +17,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('/listarEtiquetas', [EtiquetaController::class,'index']);
+Route::get('/formulario', [EtiquetaController::class,'setForm']);
+Route::get('/download', [EtiquetaController::class,'download']);
+Route::get('/upload', [EtiquetaController::class,'upload']);
+Route::get('/leitura', [EtiquetaController::class,'leitura']);
+

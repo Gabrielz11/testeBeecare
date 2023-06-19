@@ -11,24 +11,23 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('page', function (Blueprint $table) {
-            $table->id();
+        Schema::create('valores', function (Blueprint $table) {
+            $table->uuid('id')->unique();
             $table->string('page');
             $table->string('title');
             $table->string('subtitle');
-            $table->string('information');
+            $table->string('informationTable');
             $table->string('name');
             $table->float('amount', 8, 2);
-            $table->string('link1');
-            $table->string('link2');
             $table->timestamps();
         });
     }
+
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::dropIfExists('page');
+        Schema::dropIfExists('valores');
     }
 };
