@@ -13,6 +13,8 @@ use Facebook\WebDriver\WebDriverCheckboxes;
 use Facebook\WebDriver\WebDriverRadios;
 use Facebook\WebDriver\WebDriverSelect;
 use Illuminate\Support\Facades\Storage;
+use Rap2hpoutre\FastExcel\Facades\FastExcel;
+use Illuminate\Support\Collection;
 use Smalot\PdfParser\Parser;
 
 class EtiquetaController extends Controller
@@ -163,13 +165,14 @@ class EtiquetaController extends Controller
 
         $pdfParser = new Parser();
         $pdfPath = Storage::path('LeituraPDF.pdf');
-        $pdf = $pdfParser->parseFile($pdfPath);
-        $pages = $pdf->getPages();
-
-        foreach ($pages as $key => $page) {
-            if ($key == 0 && $key != 1) {
-                $conteudo = $page->getText();
+        $pdfParsePath = $pdfParser->parseFile($pdfPath);
+        $paginas = $pdfParsePath->getPages();
+        $file = fopen(Storage::path('LeituraPDF.csv'), 'w+');
+        foreach ($paginas as $key => $pagina) {
+            if ($key == 0) {
+                $conteudo = $pagina->getText();
                 $conteudo = preg_replace("/\r|\n/", "", $conteudo);
+
                 preg_match_all('/ANS([0-9]*)/m', $conteudo, $ansMatches);
                 $registroAns = $ansMatches[1][0] ?? "";
                 preg_match_all('/Nome da Operadora([A-Z ]* [\w\/]*)/m', $conteudo, $operadoraMatches);
@@ -201,26 +204,102 @@ class EtiquetaController extends Controller
                 $valorProcessadoGeral = $valorGeralmatches[1][0] ?? "";
                 $valorLiberadoGeral = $valorGeralmatches[1][0] ?? "";
 
-                $data [] = array(
-                    "Registro ANS" =>  $registroAns,
-                    "Nome da Operadora" => $nomeOperadora,
-                    "Código na Operadora" => $codOperadora,
-                    "Nome do Contratado" => $nomeContratado,
-                    "Número do Lote" => $numlote,
-                    "Número do Protocolo" => $numProtocolo,
-                    "Data do Protocolo" => $dataProtocolo,
-                    "Código  da Glosa do Protocolo" => $codGlosaProtocolo,
-                    "Valor Informado do Protocolo" => $valorInformadoProtocolo,
-                    "Valor Processado do Protocolo" => $valorProcessadoProtocolo,
-                    "Valor Liberado do Protocolo" => $valorLiberadoProtocolo,
-                    "Valor Glosa do Protocolo" => $valorGlosaProtocolo,
-                    "Valor Informado Geral" => $valorInformadoGeral,
-                    "Valor Processado Geral" => $valorProcessadoGeral,
-                    "Valor Liberado Geral" => $valorLiberadoGeral,
-                    "Valor Glosa Geral" => $valorGlosaGeral);
+                $cabecalho = array(
+                    "Registro ANS",
+                    "Nome da Operadora",
+                    "Código na Operadora",
+                    "Nome do Contratado",
+                    "Número do Lote",
+                    "Número do Protocolo",
+                    "Data do Protocolo",
+                    "Código  da Glosa do Protocolo",
+                    "Valor Informado do Protocolo",
+                    "Valor Processado do Protocolo",
+                    "Valor Liberado do Protocolo",
+                    "Valor Glosa do Protocolo",
+                    "Valor Informado Geral",
+                    "Valor Processado Geral",
+                    "Valor Liberado Geral",
+                    "Valor Glosa Geral",
+                    'Número da Guia no Prestador',
+                    'Número da Guia Atribuido pela Operadora',
+                    'Senha',
+                    'Nome Beneficiario',
+                    'Número da Carteira',
+                    'Data  do Faturamento',
+                    'Data Fim Faturamento',
+                    'Hora Inicio do Faturamento',
+                    'Hora Fim do Faturamento',
+                    'Código da Glosa da Guia',
+                    'Data de Realização',
+                    'Tabela',
+                    'Código do Procedimento',
+                    'Descrição',
+                    'Grau de Participação',
+                    'Valor Informado',
+                    'Quant. Executada',
+                    'Valor Processado',
+                    'Valor Liberado',
+                    'Valor Glosa',
+                    'Código da Glosa',
+                    'Valor Informado da Guia',
+                    'Valor Processado da Guia',
+                    'Valor Liberado da Guia',
+                    'Valor Glosa da Guia'
+                );
+                $data = array(
+                    $registroAns,
+                    $nomeOperadora,
+                    $codOperadora,
+                    $nomeContratado,
+                    $numlote,
+                    $numProtocolo,
+                    $dataProtocolo,
+                    $codGlosaProtocolo,
+                    $valorInformadoProtocolo,
+                    $valorProcessadoProtocolo,
+                    $valorLiberadoProtocolo,
+                    $valorGlosaProtocolo,
+                    $valorInformadoGeral,
+                    $valorProcessadoGeral,
+                    $valorLiberadoGeral,
+                    $valorGlosaGeral
+                );
+                fputcsv($file, $cabecalho);
+                fputcsv($file, $data);
+            }  else if ($key >= 2) {
+                $conteudo = $pagina->getText();
 
-            } else if($key >= 2) {
-                $conteudo = $page->getText();
+                preg_match_all('/ANS([0-9]*)/m', $conteudo, $ansMatches);
+                $registroAns = $ansMatches[1][0] ?? "";
+                preg_match_all('/Nome da Operadora([A-Z ]* [\w\/]*)/m', $conteudo, $operadoraMatches);
+                $nomeOperadora = $operadoraMatches[1][0] ?? "";
+                preg_match_all('/Código na Operadora([0-9]*)/m', $conteudo, $codOperadoraMatches);
+                $codOperadora = $codOperadoraMatches[1][0] ?? "";
+                preg_match_all('/Código na Operadora([0-9 ]*- [A-Z .-]*[0-9]*)/m', $conteudo, $nomeContratadoMatches);
+                $nomeContratado = $nomeContratadoMatches[1][0] ?? "";
+                preg_match_all('/Código CNES([0-9]{1})/m', $conteudo, $numloteMatches);
+                $numlote = $numloteMatches[1][0] ?? "";
+                preg_match_all('/Número do Lote([0-9]{7})/m', $conteudo, $numProtocoloMatches);
+                $numProtocolo = $numProtocoloMatches[1][0] ?? "";
+                preg_match_all('/Nº do Protocolo \(Processo\)([0-9\/]*)/m', $conteudo, $dataProtocoloMatches);
+                $dataProtocolo = $dataProtocoloMatches[1][0] ?? "";
+                preg_match_all('/Código da Glosa do Protocolo()/m', $conteudo, $codGlosaProtocoloMatches);
+                $codGlosaProtocolo = $codGlosaProtocoloMatches[1][0] ?? "";
+
+                preg_match_all('/Valor Informado do Protocolo (\([A-Z$\) .,0-9]{13})/m', $conteudo, $valorProtocoloMatches);
+                $valorInformadoProtocolo = $valorProtocoloMatches[1][0] ?? "";
+                $valorProcessadoProtocolo = $valorProtocoloMatches[1][0] ?? "";
+                $valorLiberadoProtocolo = $valorProtocoloMatches[1][0] ?? "";
+
+                preg_match_all('/Valor Informado do Protocolo (\([A-Z$\) .,0-9]{13})([A-Z$\) .,0-9]{11})([0-9.,]*)/m', $conteudo, $valorMatches);
+                $valorGlosaProtocolo = $valorMatches[3][0] ?? "";
+                $valorGlosaGeral = $valorMatches[3][0] ?? "";
+
+                preg_match_all('/Valor Informado Geral (\([A-Z$\) .,0-9]{13})/m', $conteudo, $valorGeralmatches);
+                $valorInformadoGeral = $valorGeralmatches[1][0] ?? "";
+                $valorProcessadoGeral = $valorGeralmatches[1][0] ?? "";
+                $valorLiberadoGeral = $valorGeralmatches[1][0] ?? "";
 
                 preg_match_all('/Número da Guia no Prestador([0-9]*)/m', $conteudo, $guiaPrestadorMatches);
                 $numGuiaPrestador = $guiaPrestadorMatches[1][0] ?? "";
@@ -237,16 +316,18 @@ class EtiquetaController extends Controller
                 preg_match_all('/Nome do Beneficiário([0-9 ]{27})/m', $conteudo, $numCarteiraMatches);
                 $numCarteira = $matches[1][0] ?? "";
 
-                preg_match_all('/(Número da Carteira[0-9\/]*)/m', $conteudo, $dataInicioFaturamentoMatches);
+                preg_match_all('/(Data Início do Faturamento[0-9\/]*)/m', $conteudo, $dataInicioFaturamentoMatches);
                 $dataInicioFaturamento = $dataInicioFaturamentoMatches[1][0] ?? "";
+                $dataInicioFaturamento = str_replace("Data Início do Faturamento", "", $dataInicioFaturamento);
 
                 preg_match_all('/Data Início do Faturamento([0-9\/]*)/m', $conteudo, $dataFimFaturamentoMatches);
                 $dataFimFaturamento = $dataFimFaturamentoMatches[1][0] ?? "";
 
-                preg_match_all('/Data Fim do Faturamento([0-9:]*)/m', $conteudo, $horaInicioFaturamentoMatches);
-                $horaInicioFaturamento = $horaInicioFaturamentoMatches[1][0] ?? "";
+                preg_match_all('/Hora Início do Faturamento([0-9:]*)/m', $conteudo, $horaInicioFaturamentoMatches);
+                $horaInicioFaturamento = $horaInicioFaturamentoMatches[0][0] ?? "";
+                $horaInicioFaturamento = str_replace("Hora Início do Faturamento", "", $horaInicioFaturamento);
 
-                preg_match_all('/Hora Início do Faturamento([0-9:]*)/m', $conteudo, $horaFimFaturamentoMatches);
+                preg_match_all('/Hora Fim do Faturamento([0-9:]*)/m', $conteudo, $horaFimFaturamentoMatches);
                 $horaFimFaturamento = $horaFimFaturamentoMatches[1][0] ?? "";
 
                 preg_match_all('/Código da Glosa da Guia([0-9\/]*)/m', $conteudo, $codGlosaGuiaMatches);
@@ -296,37 +377,58 @@ class EtiquetaController extends Controller
 
                 preg_match_all('/Valor Glosa da Guia(\([A-Z$\) .,0-9]{13})/m', $conteudo, $valorGlosaGuiaMatches);
                 $valorGlosaGuia = $valorGlosaGuiaMatches[1][0] ?? "";
-
-
-                $data = array(
-                    'Número da Guia no Prestador' => $numGuiaPrestador,
-                    'Número da Guia Atribuido pela Operadora' => $numGuiaOperadora,
-                    'Senha' => $senha,
-                    'Nome Beneficiario' => $nomeBeneficiario,
-                    'Número da Carteira' => $numCarteira,
-                    'Data Inicio do Faturamento'=>$dataInicioFaturamento,
-                    'Data Fim Faturamento'=>$dataFimFaturamento,
-                    'Hora Inicio do Faturamento'=>$horaInicioFaturamento,
-                    'Hora Fim do Faturamento'=>$horaFimFaturamento,
-                    'Código da Glosa da Guia'=>$codGlosaGuia,
-                    'Data de Realização'=> $dataRealizacaoGuia,
-                    'Tabela'=> $tabela,
-                    'Código do Procedimento'=> $codProcedimento,
-                    'Descrição'=> $descricao,
-                    'Grau de Participação'=> $grauParticipacao,
-                    'Valor Informado'=> $valorInformado,
-                    'Quant. Executada'=> $qtdExecutada,
-                    'Valor Processado'=> $valorProcessado,
-                    'Valor Liberado'=> $valorLiberado,
-                    'Valor Glosa'=> $valorGlosa,
-                    'Código da Glosa'=> $codGlosa,
-                    'Valor Informado da Guia'=> $valorInformadoGuia,
-                    'Valor Processado da Guia'=> $valorProcessadoGuia,
-                    'Valor Liberado da Guia'=> $valorLiberadoGuia,
-                    'Valor Glosa da Guia'=> $valorGlosaGuia
+                $data2[] = array(
+                    $registroAns,
+                    $nomeOperadora,
+                    $codOperadora,
+                    $nomeContratado,
+                    $numlote,
+                    $numProtocolo,
+                    $dataProtocolo,
+                    $codGlosaProtocolo,
+                    $valorInformadoProtocolo,
+                    $valorProcessadoProtocolo,
+                    $valorLiberadoProtocolo,
+                    $valorGlosaProtocolo,
+                    $valorInformadoGeral,
+                    $valorProcessadoGeral,
+                    $valorLiberadoGeral,
+                    $valorGlosaGeral,
+                    $numGuiaPrestador,
+                    $numGuiaOperadora,
+                    $senha,
+                    $nomeBeneficiario,
+                    $numCarteira,
+                    $dataInicioFaturamento,
+                    $dataFimFaturamento,
+                    $horaInicioFaturamento,
+                    $horaFimFaturamento,
+                    $codGlosaGuia,
+                    $dataRealizacaoGuia,
+                    $tabela,
+                    $codProcedimento,
+                    $descricao,
+                    $grauParticipacao,
+                    $valorInformado,
+                    $qtdExecutada,
+                    $valorProcessado,
+                    $valorLiberado,
+                    $valorGlosa,
+                    $codGlosa,
+                    $valorInformadoGuia,
+                    $valorProcessadoGuia,
+                    $valorLiberadoGuia,
+                    $valorGlosaGuia
                 );
+                $dados2 = $data2;
             }
-            //new FastExcel(collect($data))->export(storage_path('app/Leitura_PDF.xlsx';
         }
+        foreach($dados2 as $dado){
+           fputcsv($file,$dado);
+        }
+        return response()->json([
+            'status'=> 200,
+            'message'=> 'Ok'
+        ]);
     }
 }
